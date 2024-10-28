@@ -1,0 +1,171 @@
+---
+title: "w4-1"
+output: html_document
+date: "2024-10-28"
+---
+
+```{r}
+install.packages("sf")           # 用于读取 .geojson 文件
+install.packages("dplyr")        # 用于数据处理
+install.packages("countrycode")  # 用于国家代码转换
+```
+
+
+```{r}
+# 检查Rtools是否可用
+install.packages("pkgbuild")
+library(pkgbuild)
+has_rtools()
+```
+
+```{r}
+library(countrycode)
+
+# 添加国家代码列
+gender_inequality_data <- gender_inequality_data %>%
+  mutate(country_code = countrycode(country, "country.name", "iso3c"))
+
+# 查看更新后的数据
+head(gender_inequality_data)
+```
+```{r}
+library(countrycode)
+library(dplyr)  # 添加这一行
+
+# 添加国家代码列
+gender_inequality_data <- gender_inequality_data %>%
+  mutate(country_code = countrycode(country, "country.name", "iso3c"))
+
+# 查看更新后的数据
+head(gender_inequality_data)
+```
+```{r}
+gender_inequality_data <- read.csv("E:\\UCL\\0005\\HDR23-24_Composite_indices_complete_time_series.csv")
+```
+
+```{r}
+library(countrycode)
+library(dplyr)
+
+# 添加国家代码列
+gender_inequality_data <- gender_inequality_data %>%
+  mutate(country_code = countrycode(country, "country.name", "iso3c"))
+
+# 查看更新后的数据
+head(gender_inequality_data)
+```
+```{r}
+# 合并数据
+
+merged_data <- world_geo_data %>%
+
+  left_join(gender_inequality_data, by = c("iso3" = "country_code"))
+
+# 查看合并后的数据
+
+head(merged_data)
+```
+```{r}
+library(sf)
+world_geo_data <- st_read("E:\\UCL\\0005\\W4\\World_Countries_Generalized.geojson") 
+```
+```{r}
+# 查看 world_geo_data 的列名
+colnames(world_geo_data)
+
+# 查看 gender_inequality_data 的列名
+colnames(gender_inequality_data)
+
+```
+```{r}
+# 重命名 world_geo_data 中的 "ISO" 列为 "iso3"
+world_geo_data <- world_geo_data %>%
+  rename(iso3 = ISO)
+
+# 合并数据
+merged_data <- world_geo_data %>%
+  left_join(gender_inequality_data, by = "iso3")
+
+# 查看合并后的数据
+head(merged_data)
+
+```
+```{r}
+st_write(merged_data, "E:/UCL/0005/W4/merged_data.geojson", driver = "GeoJSON")
+```
+```{r}
+# 查看列名
+names(merged_data)
+
+# 清理重复列名并重新保存
+merged_data_clean <- merged_data %>%
+  select_if(~!all(is.na(.))) %>%  # 移除全是NA的列
+  select(!contains(".")) %>%       # 移除包含点号的重复列
+  distinct()                       # 确保没有完全重复的行
+
+# 再次尝试保存
+st_write(merged_data_clean, 
+         "E:/UCL/0005/W4/merged_data.geojson", 
+         driver = "GeoJSON",
+         delete_dsn = TRUE)  # 如果文件已存在，将其覆盖
+```
+```{r}
+# 首先，检查文件是否存在，如果存在就删除
+if (file.exists("E:/UCL/0005/W4/merged_data.geojson")) {
+  file.remove("E:/UCL/0005/W4/merged_data.geojson")
+}
+
+# 然后清理数据并保存
+merged_data_clean <- merged_data %>%
+  select_if(~!all(is.na(.))) %>%  # 移除全是NA的列
+  select(!contains(".")) %>%       # 移除包含点号的重复列
+  distinct()                       # 确保没有完全重复的行
+
+# 保存文件
+st_write(merged_data_clean, 
+         "E:/UCL/0005/W4/merged_data.geojson", 
+         driver = "GeoJSON")
+```
+```{r}
+# 使用 sf 包的其他选项
+st_write(merged_data_clean, 
+         "E:/UCL/0005/W4/merged_data.geojson", 
+         driver = "GeoJSON",
+         append = FALSE,  # 不追加
+         delete_dsn = TRUE)  # 如果存在则删除
+```
+```{r}
+duplicated_names <- colnames(merged_data)[duplicated(colnames(merged_data))]
+duplicated_names  # 打印出重复的列名
+
+```
+```{r}
+merged_data <- merged_data[ , !duplicated(colnames(merged_data))]
+
+```
+
+```{r}
+library(dplyr)
+merged_data <- merged_data %>%
+  rename_with(make.unique)
+
+```
+
+```{r}
+st_write(merged_data, "E:/UCL/0005/W4/merged_data.geojson", driver = "GeoJSON")
+
+```
+```{r}
+file.remove("E:/UCL/0005/W4/merged_data.geojson")  # 删除旧文件
+
+```
+```{r}
+st_write(merged_data, "E:/UCL/0005/W4/merged_data.geojson", driver = "GeoJSON")
+
+```
+```{r}
+write.csv(merged_data, "merged_data_backup.csv")
+saveRDS(merged_data, "merged_data_backup.rds")
+
+```
+
